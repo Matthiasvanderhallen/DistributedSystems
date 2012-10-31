@@ -50,7 +50,7 @@
 	
 	\vspace{5cm}
 
-	{\Large	Thomas Uyttendaele s0215028 \\* Matthias van der Hallen s0219692\\* Burgerlijk ingenieur Eerste master \\* Computerwetenschappen}
+	{\Large	Thomas Uyttendaele s0215028 \\* Matthias van der Hallen s0219692\\* Burgerlijk ingenieur Eerste Master \\* Computerwetenschappen}
 \end{center}
 
 \vspace{8cm}
@@ -70,6 +70,78 @@
 \renewcommand{\contentsname}{Inhoudstafel}
 \tableofcontents
 \newpage
-\section{Benaderen met een rechthoek of een vierkant}
+\section{Overview Design}
+In this section there will be an overview of the most important components and their responsibilities. 
+This will all be discussed with the aid of the following \emph{class diagram} \ref{fig:classdiagram}. 
+\begin{figure}[hbtp]
+\centering
+\includegraphics[width=\textwidth]{img/RMI 2-3.png}
+\caption{Overview of the design}
+\label{fig:classdiagram}
+\end{figure}
+
+\subsection{\texttt{SessionService}}
+This is the factory class for the creation of new \texttt{Manager}- and \texttt{ReservationSession}s. It registers itself at the standard JAVA RMI Registry at the initialization and it runs on the travel agency server. On this server it is a stand alone program and the main access point to our agencies service. By holding a link to the CarRentalCompany \texttt{INamingservice}, which is a different JAVA RMI Registry that can run on a different server, it can provide access to this naming service for the sessions it creates. In our example, the \texttt{NamingService} runs only on a different port but it could just as well run on a different host. 
+
+It is also responsible for the garbage collection. Every session is saved and in normal use the sessions should be closed with the \texttt{close...Session}-method. When a session is inactive for more than an hour, it will be automatically closed by the \texttt{SessionService}. 
+(In our implementation, for testing purposes, the inactivity timeout is only 3.6 seconds instead of the aforementioned one hour.)
+
+\subsection{\texttt{ManagerSession}}
+This class is used by managers to access the server and perform actions on this server. They can register and unregister new \texttt{ICarRentalCompany}s at a different RMI Registry, the CarRentalCompanies \texttt{namingService} as mentioned before. 
+
+It can also perform various statistics related methods, such as \texttt{getReservationsBy(renter:String)}. 
+
+The normal behaviour of the registration process is given in the following \emph{interaction diagram} \ref{fig:activity_carrentalregistration}.
+\begin{figure}[hbtp]
+\centering
+\includegraphics[width=\textwidth]{img/CarRentalCompany registration process.png}
+\caption{Interaction diagram of the registration process}
+\label{fig:activity_carrentalregistration}
+\end{figure}
+
+\subsection{\texttt{ReservationSession}}
+This class is used by clients to make reservations on the server. This works in 2 separate steps, first creating \texttt{Quote}s and afterwards confirming them, to ensure transactional behaviour. 
+
+The transaction behaviour means this process can fails sometimes when multiple clients a concurrently making reservations. In the first step, by making a \texttt{Quote}, the Car is not yet put aside for the client. If someone else makes a \texttt{Quote} and confirms it in the meantime, then the first clients confirmation will fail if the company doesn't have any identical cars left and a exception will be thrown. This behaviour is shown in the following  \emph{interaction diagram} \ref{fig:failed_confirmation_diagram}. 
+
+Access to these services are synchronised on the \texttt{NamingService} so only one person at the time can be in these critical sections, for example during a confirmation it won't be possible for others to make a confirmation.
+\begin{figure}[hbtp]
+\centering
+\includegraphics[width=\textwidth]{img/CarRentalCompany registration process.png}
+\caption{Interaction diagram of the registration process}
+\label{fig:failed_confirmation_diagram}
+\end{figure}
+
+\subsection{\texttt{CarRentalCompany}}
+This is the regular CarRentalCompany from the first JAVA RMI session. It implements \texttt{Remote} so it could run on the server of the CarRentalCompany itself instead of running on the agency server. 
+
+The rest of the behaviour of this package has stayed the same as in the first JAVA RMI session.
+
+\section{Design Decisions}
+
+\subsection{Remote Access}
+As can be found in the \emph{class diagram} (figure \ref{fig:classdiagram}), the following classes are remote: \texttt{ISessionService}, \\ \texttt{IManagerSession}, \texttt{IReservationSession} and \texttt{ICarRentalCompany}. These provide a interface to programs running elsewhere, meaning they should be remotely accessible. 
+
+\texttt{Quote}, \texttt{CarType}, \texttt{ReservationConstraints} and \texttt{ReservationException} are \emph{Serializable} because they are data-classes that never change after initialization. 
+
+\subsection{Deployment of the application}
+The deployment of the application is shown on the \emph{deployment diagram} \ref{fig:deployment}.
+Most importantly, the \\ \texttt{CarRentalCompany}s run on a different host then the \texttt{SessionService} and the \texttt{NamingService}. This is because they are property of the respective \texttt{CarRentalCompany}s themselves. 
+
+\begin{figure}[hbtp]
+\centering
+\includegraphics[width=\textwidth]{img/Deployment Diagram.png}
+\caption{Deployment of the application}
+\label{fig:deployment}
+\end{figure}
+\subsection{RMI Registration}
+The \texttt{NamingService} and the \texttt{SessionService} are registered at their own local JAVA RMI Registry. These are standalone applications running on their own respective servers. \texttt{SessionService} has to know the host and port where the \texttt{NamingService} is running, so that it can acquire a link to the \texttt{NamingService}.
+
+\texttt{CarRentalCompany}s register themselves at the \texttt{NamingService}, which functions as a non-local and non-standard JAVA RMI Registry.
+
+\subsection{Synchronization}
+In the \texttt{ReservationSession} class, thread-safety is of utmost importance. When multiple clients are making quotes and confirming them, things could go unexpectedly. To prevent these frustrations and problems, these actions are performed in a \emph{critical session} by using the java \emph{synchronised} keyword on \texttt{NamingService}. This prevents concurrent users from reserving cars at the same time.
+
+These methods are short, but remote. This means that there might be latency from the network which could cause long execution times. This means that they are quite prone to becoming a bottleneck. One slight optimization would be to lock on only the companies used in the transaction, instead of all the companies, as in the current implementation. But there are likely other more efficient methods, such as locking on the cartype and the corresponding the company. That way, more concurrent modifications are possible, but it's also much more difficult to implement, and the synchronization needs more time.
 
 \end{document}
