@@ -21,7 +21,7 @@
 \newcommand{\todo}[1]{\marginpar{#1}}
 
 \title{RMI Session 2-3: CarRentalAgency}
-\author{Thomas Uyttendaele en Matthias van der Hallen}
+\author{Thomas Uyttendaele and Matthias van der Hallen}
 \date{2012/11/02}
 \setcounter{page}{0}
 \setlength{\headheight}{15pt}
@@ -81,9 +81,9 @@ This will all be discussed with the aid of the following \emph{class diagram} \r
 \end{figure}
 
 \subsection{\texttt{SessionService}}
-This is the factory class for the creation of new \texttt{Manager}- and \texttt{ReservationSession}s. It registers itself at the standard JAVA RMI Registry at the initialization and it runs on the travel agency server. On this server it is a stand alone program and the main access point to our agencies service. By holding a link to the CarRentalCompany \texttt{INamingservice}, which is a different JAVA RMI Registry that can run on a different server, it can provide access to this naming service for the sessions it creates. In our example, the \texttt{NamingService} runs only on a different port but it could just as well run on a different host. 
+This is the factory class for the creation of new \texttt{Manager}- and \texttt{ReservationSession}s. It registers itself at the standard JAVA RMI Registry at the initialization and it runs on the travel agency server. On this server, it is a stand alone program and the main access point to our agencies service. By holding a link to the CarRentalCompany \texttt{INamingservice}, which is a different JAVA RMI Registry that can run on a different server, it can provide access to this naming service for the sessions it creates. In our example, the \texttt{NamingService} runs only on a different port but it could just as well run on a different host. 
 
-It is also responsible for the garbage collection. Every session is saved and in normal use the sessions should be closed with the \texttt{close...Session}-method. When a session is inactive for more than an hour, it will be automatically closed by the \texttt{SessionService}. 
+It is also responsible for the garbage collection. It has a link of all the active session and in normal use the sessions should be closed with the \texttt{close...Session}-method. When a session is inactive for more than an hour and not closed by itself, it will be automatically closed by the \texttt{SessionService}. 
 (In our implementation, for testing purposes, the inactivity timeout is only 3.6 seconds instead of the aforementioned one hour.)
 
 \subsection{\texttt{ManagerSession}}
@@ -140,8 +140,8 @@ The \texttt{NamingService} and the \texttt{SessionService} are registered at the
 \texttt{CarRentalCompany}s register themselves at the \texttt{NamingService}, which functions as a non-local and non-standard JAVA RMI Registry.
 
 \subsection{Synchronization}
-In the \texttt{ReservationSession} class, thread-safety is of utmost importance. When multiple clients are making quotes and confirming them, things could go unexpectedly. To prevent these frustrations and problems, these actions are performed in a \emph{critical session} by using the java \emph{synchronised} keyword on \texttt{NamingService}. This prevents concurrent users from reserving cars at the same time.
+In the \texttt{ReservationSession} class, thread-safety is of utmost importance. When multiple clients are making quotes and confirming them, things could go unexpectedly. To prevent these frustrations and problems, these actions are performed in a \emph{critical session} by using the JAVA \emph{synchronised} keyword on \texttt{NamingService}. This prevents concurrent users from reserving cars at the same time.
 
-These methods are short, but remote. This means that there might be latency from the network which could cause long execution times. This means that they are quite prone to becoming a bottleneck. One slight optimization would be to lock on only the companies used in the transaction, instead of all the companies, as in the current implementation. But there are likely other more efficient methods, such as locking on the cartype and the corresponding the company. That way, more concurrent modifications are possible, but it's also much more difficult to implement, and the synchronization needs more time.
+These methods are short, but require remote calls. This means that there might be latency from the network which could cause long execution times. This means that they are quite prone to becoming a bottleneck. One slight optimization would be to lock on only the companies used in the transaction, instead of all the companies, as in the current implementation. But there are likely other more efficient methods, such as locking on the \texttt{CarType} (however this is serializable, so extra locking logic is needed) and the corresponding the \texttt{ICarCompany}. That way, more concurrent modifications are possible, but it's also much more difficult to implement, and the synchronization and the locks need more time.
 
 \end{document}
