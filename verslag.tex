@@ -50,7 +50,7 @@
 	
 	\vspace{5cm}
 
-	{\Large	Thomas Uyttendaele s0215028 \\* Matthias van der Hallen s0219692\\* Burgerlijk ingenieur Eerste Master \\* Computerwetenschappen}
+	{\Large	Thomas Uyttendaele s0215028 \\* Matthias van der Hallen s0219692\\* Burgerlijk Ingenieur Eerste Master \\* Computerwetenschappen}
 \end{center}
 
 \vspace{8cm}
@@ -143,6 +143,6 @@ The \texttt{NamingService} and the \texttt{SessionService} are registered at the
 \subsection{Synchronization}
 In the \texttt{ReservationSession} class, thread-safety is of utmost importance. When multiple clients are making quotes and confirming them, things could behave unexpectedly. To prevent frustrations and problems, the actions available to this class are performed in a \emph{critical session} by using the JAVA \emph{synchronised} keyword on \texttt{NamingService}. This prevents concurrent users from reserving cars at the same time.
 
-These methods are short, but require remote calls, which means there might be latency from the network which could cause long execution times. This suggests that they are quite prone to becoming a bottleneck. One slight optimization would be to lock on only the companies used in the transaction, instead of all the companies, as in the current implementation. But there are likely other more efficient methods, such as locking on the \texttt{CarType}s (however this is serializable, so extra locking logic is needed) and the corresponding the \texttt{ICarCompany}s involved. That way, more concurrent modifications are possible, but it's also much more difficult to implement, and the synchronization and the locks need more time.
+These methods are short, but require remote calls, which means there might be latency from the network which could cause long execution times. This suggests that they are quite prone to becoming a bottleneck. One slight optimization would be to lock on only the companies used in the transaction, instead of all the companies, as in the current implementation. But there are likely other more efficient methods, such as locking on the \texttt{CarType}s (however this is serializable, so extra locking logic is needed) and the corresponding the \texttt{ICarCompany}s involved. That way, more concurrent modifications are possible, but it's also much more difficult to implement, and the synchronization process needs more time by having more locks to place.
 
 \end{document}
