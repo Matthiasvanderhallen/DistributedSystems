@@ -138,7 +138,7 @@ Most importantly, the \\ \texttt{CarRentalCompany}s run on a different host than
 \subsection{RMI Registration}
 The \texttt{NamingService} and the \texttt{SessionService} are registered at their own local JAVA RMI Registry. These are standalone applications running on their own respective servers. \texttt{SessionService} has to know the host and port of the Java RMI Registry that the \texttt{NamingService} bound itself to, so that it can acquire a link to the \texttt{NamingService}. The \texttt{SessionService} is registered on its own local JAVA RMI so that the client can perform a lookup to acquire a hook to the \texttt{SessionService}.
 
-\texttt{CarRentalCompany}s are registered by a \texttt{ManagerSession} at the \texttt{NamingService}, which functions the same way as a JAVA RMI Registry. (It offers registration, unregistration and lookup of objects implementing the Remote interface)
+\texttt{CarRentalCompany}s are registered by a \texttt{ManagerSession} at the \texttt{NamingService}, the \texttt{NamingService} functions the same way as a JAVA RMI Registry. (It offers registration, unregistration and lookup of objects implementing the Remote interface)
 
 \subsection{Synchronization}
 In the \texttt{ReservationSession} class, thread-safety is of utmost importance. When multiple clients are making quotes and confirming them, things could behave unexpectedly. To prevent frustrations and problems, the actions available to this class are performed in a \emph{critical session} by using the JAVA \emph{synchronised} keyword on \texttt{NamingService}. This prevents concurrent users from reserving cars at the same time.
